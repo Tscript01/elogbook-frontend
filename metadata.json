@@ -1,0 +1,8 @@
+{
+  "name": "SIWES E-Logbook",
+  "description": "Electronic logbook for the Student Industrial Work Experience Scheme (SIWES)",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

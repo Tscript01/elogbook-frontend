@@ -109,7 +109,12 @@ const breadcrumbs = computed<Breadcrumb[]>(() => [
 
 const weekProgress = computed(() => (logbook.activeWeekNo / logbook.totalWeeks) * 100)
 
+onMounted(() => {
+  logbook.loadInitialData()
+  session.fetchUser()
+})
+
 const signOut = async () => {
-  await navigateTo('/')
+  await session.logout()
 }
 </script>

@@ -44,6 +44,7 @@
       class="mt-4"
       block
       :disabled="completed < 5 || locked"
+      :loading="submitting"
       @click="emit('submit')"
     >
       <Send class="h-4 w-4" aria-hidden="true" />
@@ -57,12 +58,16 @@ import { AlertTriangle, Info, Send } from '@lucide/vue'
 import type { SubmissionStatus } from '~/types/models'
 import { submissionLabel, submissionTone } from '~/utils/status'
 
-defineProps<{
-  completed: number
-  status: SubmissionStatus
-  supervisor: string
-  locked: boolean
-}>()
+withDefaults(
+  defineProps<{
+    completed: number
+    status: SubmissionStatus
+    supervisor: string
+    locked: boolean
+    submitting?: boolean
+  }>(),
+  { submitting: false }
+)
 
 const emit = defineEmits<{ submit: [] }>()
 </script>

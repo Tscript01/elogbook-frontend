@@ -127,8 +127,8 @@
             <CheckCircle2 class="h-4 w-4" aria-hidden="true" />
             Placement details saved
           </p>
-          <UiBaseButton variant="outline" @click="reset">Reset</UiBaseButton>
-          <UiBaseButton type="submit">
+          <UiBaseButton variant="outline" :disabled="logbook.isSavingPlacement" @click="reset">Reset</UiBaseButton>
+          <UiBaseButton type="submit" :loading="logbook.isSavingPlacement">
             <Save class="h-4 w-4" aria-hidden="true" />
             Save placement
           </UiBaseButton>
@@ -215,7 +215,7 @@ const reset = () => {
   saved.value = false
 }
 
-const save = () => {
+const save = async () => {
   const next: Record<string, string> = {}
 
   if (form.company_name.trim().length < 2) {
@@ -235,15 +235,14 @@ const save = () => {
     return
   }
 
-  logbook.placement = {
-    ...logbook.placement,
+  await logbook.savePlacement({
     company_name: form.company_name.trim(),
     company_address: form.company_address.trim() || null,
     company_email: form.company_email.trim() || null,
     company_contact: form.company_contact.trim() || null,
     start_date: form.start_date,
     end_date: form.end_date
-  }
+  })
   saved.value = true
 }
 </script>

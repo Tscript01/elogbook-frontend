@@ -78,8 +78,8 @@
             <CheckCircle2 class="h-4 w-4" aria-hidden="true" />
             Profile updated
           </p>
-          <UiBaseButton variant="outline" @click="reset">Reset</UiBaseButton>
-          <UiBaseButton type="submit">
+          <UiBaseButton variant="outline" :disabled="session.isLoading" @click="reset">Reset</UiBaseButton>
+          <UiBaseButton type="submit" :loading="session.isLoading">
             <Save class="h-4 w-4" aria-hidden="true" />
             Save changes
           </UiBaseButton>
@@ -132,7 +132,6 @@
 <script setup lang="ts">
 import { CheckCircle2, Save } from '@lucide/vue'
 import { reactive, ref } from 'vue'
-import { mockStudentProfile } from '~/data/mock-student'
 import { useSessionStore } from '~/stores/session'
 
 definePageMeta({
@@ -148,12 +147,12 @@ const levels = ['200', '300', '400', '500']
 const initialForm = () => ({
   name: session.user.name,
   email: session.user.email,
-  phone: mockStudentProfile.phone,
-  matric_number: mockStudentProfile.matric_number,
-  institution: mockStudentProfile.institution,
-  faculty: mockStudentProfile.faculty,
-  department: mockStudentProfile.department,
-  level: mockStudentProfile.level
+  phone: session.profile.phone,
+  matric_number: session.profile.matric_number,
+  institution: session.profile.institution,
+  faculty: session.profile.faculty,
+  department: session.profile.department,
+  level: session.profile.level
 })
 
 const form = reactive(initialForm())
@@ -164,11 +163,16 @@ const reset = () => {
   saved.value = false
 }
 
-const save = () => {
-  session.setUser({
-    ...session.user,
+const save = async () => {
+  await session.updateProfile({
     name: form.name.trim(),
-    email: form.email.trim()
+    email: form.email.trim(),
+    phone: form.phone.trim(),
+    matric_number: form.matric_number.trim(),
+    institution: form.institution.trim(),
+    faculty: form.faculty.trim(),
+    department: form.department.trim(),
+    level: form.level
   })
   saved.value = true
 }

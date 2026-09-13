@@ -36,6 +36,23 @@
 
       <button
         type="button"
+        class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-800/80 dark:text-slate-200 dark:hover:bg-slate-800"
+        title="API Server Connection Settings"
+        @click="showApiModal = true"
+      >
+        <span
+          class="h-2 w-2 rounded-full"
+          :class="api.liveMode.value ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'"
+          aria-hidden="true"
+        />
+        <Server class="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+        <span class="hidden sm:inline">
+          {{ api.liveMode.value ? 'API Live' : 'API Config' }}
+        </span>
+      </button>
+
+      <button
+        type="button"
         class="relative rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
         :aria-label="`Notifications, ${notificationCount} unread`"
       >
@@ -57,11 +74,15 @@
         @sign-out="emit('sign-out')"
       />
     </div>
+
+    <LayoutApiConfigModal :open="showApiModal" @close="showApiModal = false" />
   </header>
 </template>
 
 <script setup lang="ts">
-import { Bell, Menu, Search } from '@lucide/vue'
+import { Bell, Menu, Search, Server } from '@lucide/vue'
+import { ref } from 'vue'
+import { useApi } from '~/composables/useApi'
 import type { Breadcrumb, SessionUser } from '~/types/ui'
 
 withDefaults(
@@ -77,4 +98,7 @@ withDefaults(
 )
 
 const emit = defineEmits<{ 'toggle-sidebar': []; 'sign-out': [] }>()
+
+const api = useApi()
+const showApiModal = ref(false)
 </script>

@@ -22,6 +22,7 @@
           :week-no="logbook.activeWeekNo"
           :log="logbook.activeLog ?? null"
           :locked="logbook.isWeekLocked"
+          :saving="logbook.isSavingLog"
           @save="logbook.saveLog"
           @delete="logbook.deleteLog"
         />
@@ -43,6 +44,7 @@
           :status="activeStatus"
           :supervisor="logbook.placement.ind_supervisor.name"
           :locked="logbook.isWeekLocked"
+          :submitting="logbook.isSubmittingWeek"
           @submit="logbook.submitActiveWeek"
         />
 

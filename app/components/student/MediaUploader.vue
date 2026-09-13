@@ -14,17 +14,38 @@
       @dragleave.prevent="dragging = false"
       @drop.prevent="onDrop"
     >
-      <ImagePlus class="mx-auto h-6 w-6 text-slate-400" aria-hidden="true" />
-      <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
-        Drag a diagram here or
-        <label
-          :for="inputId"
-          class="cursor-pointer font-medium text-primary-600 underline underline-offset-2 dark:text-primary-400"
+      <div v-if="uploading" class="py-4">
+        <svg
+          class="mx-auto h-7 w-7 animate-spin text-primary-600 dark:text-primary-400"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
         >
-          browse your files
-        </label>
-      </p>
-      <p class="field-hint">PNG, JPG or WEBP up to 5 MB. One attachment per daily entry.</p>
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          />
+        </svg>
+        <p class="mt-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+          Uploading diagram to server...
+        </p>
+      </div>
+
+      <template v-else>
+        <ImagePlus class="mx-auto h-6 w-6 text-slate-400" aria-hidden="true" />
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          Drag a diagram here or
+          <label
+            :for="inputId"
+            class="cursor-pointer font-medium text-primary-600 underline underline-offset-2 dark:text-primary-400"
+          >
+            browse your files
+          </label>
+        </p>
+        <p class="field-hint">PNG, JPG or WEBP up to 5 MB. One attachment per daily entry.</p>
+      </template>
       <input
         :id="inputId"
         ref="fileInput"
@@ -69,6 +90,7 @@
 <script setup lang="ts">
 import { ImagePlus, Paperclip, Trash2 } from '@lucide/vue'
 import { ref } from 'vue'
+import { useLogbookStore } from '~/stores/logbook'
 
 const props = withDefaults(
   defineProps<{
@@ -81,15 +103,17 @@ const props = withDefaults(
 
 const emit = defineEmits<{ 'update:modelValue': [value: string | null] }>()
 
+const logbook = useLogbookStore()
 const inputId = 'daily-log-media'
 const fileInput = ref<HTMLInputElement | null>(null)
 const dragging = ref(false)
+const uploading = ref(false)
 const fileName = ref('')
 const error = ref('')
 
 const MAX_SIZE = 5 * 1024 * 1024
 
-const accept = (file: File | undefined) => {
+const accept = async (file: File | undefined) => {
   if (!file) return
   if (!file.type.startsWith('image/')) {
     error.value = 'Only image files can be attached.'
@@ -101,7 +125,16 @@ const accept = (file: File | undefined) => {
   }
   error.value = ''
   fileName.value = file.name
-  emit('update:modelValue', URL.createObjectURL(file))
+  uploading.value = true
+
+  try {
+    const url = await logbook.uploadMedia(file)
+    emit('update:modelValue', url)
+  } catch (err: unknown) {
+    error.value = err instanceof Error ? err.message : 'Image upload failed.'
+  } finally {
+    uploading.value = false
+  }
 }
 
 const onSelect = (event: Event) => {

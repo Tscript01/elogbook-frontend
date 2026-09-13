@@ -58,10 +58,20 @@
       <span v-else />
 
       <div class="flex items-center gap-2">
-        <UiBaseButton variant="outline" size="md" :disabled="locked" @click="reset">
+        <UiBaseButton
+          variant="outline"
+          size="md"
+          :disabled="locked || saving"
+          @click="reset"
+        >
           Reset
         </UiBaseButton>
-        <UiBaseButton type="submit" size="md" :disabled="locked">
+        <UiBaseButton
+          type="submit"
+          size="md"
+          :disabled="locked"
+          :loading="saving"
+        >
           <Save class="h-4 w-4" aria-hidden="true" />
           Save entry
         </UiBaseButton>
@@ -82,8 +92,9 @@ const props = withDefaults(
     weekNo: number
     log?: DailyLog | null
     locked?: boolean
+    saving?: boolean
   }>(),
-  { log: null, locked: false }
+  { log: null, locked: false, saving: false }
 )
 
 const emit = defineEmits<{
