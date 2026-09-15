@@ -45,17 +45,21 @@ export const getApiBase = (): string => {
 export const checkIsAuthenticated = (): boolean => {
   try {
     const tokenCookie = useCookie<string | null>(AUTH_TOKEN_COOKIE)
-    if (tokenCookie.value && tokenCookie.value.trim().length > 0) {
+    if (tokenCookie.value && typeof tokenCookie.value === 'string' && tokenCookie.value.trim().length > 0) {
       return true
     }
   } catch {
-    // Fallback if outside Nuxt context
+    // Fallback if outside Nuxt context or lifecycle
   }
 
   if (import.meta.client) {
-    const localToken = localStorage.getItem(AUTH_TOKEN_COOKIE)
-    if (localToken && localToken.trim().length > 0) {
-      return true
+    try {
+      const localToken = localStorage.getItem(AUTH_TOKEN_COOKIE)
+      if (localToken && typeof localToken === 'string' && localToken.trim().length > 0) {
+        return true
+      }
+    } catch {
+      // Storage access blocked or restricted
     }
   }
 
