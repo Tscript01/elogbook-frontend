@@ -3,8 +3,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "nuxt build",
-    "dev": "nuxt dev --host 0.0.0.0 --port 3000",
+    "build": "NODE_OPTIONS=--max-old-space-size=4096 nuxt build",
+    "dev": "NODE_OPTIONS=--max-old-space-size=4096 nuxt dev --host 0.0.0.0 --port 3000",
     "start": "node .output/server/index.mjs",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
