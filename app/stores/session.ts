@@ -6,26 +6,36 @@ import { mockStudent, mockStudentProfile } from '~/data/mock-student'
 import { createApiService, type RegisterPayload } from '~/services/api'
 import type { Role, StudentProfile } from '~/types/models'
 import type { SessionUser } from '~/types/ui'
+import {
+  checkIsAuthenticated,
+  clearDirectAuth,
+  getDirectToken,
+  getDirectUser,
+  saveDirectAuth
+} from '~/utils/auth'
 
 export const useSessionStore = defineStore('session', () => {
   const api = useApi()
   const apiService = createApiService()
   const toast = useToast()
 
-  const user = ref<SessionUser>({
-    id: mockStudent.id,
-    name: mockStudent.name,
-    email: mockStudent.email,
-    role: mockStudent.role,
-    avatar_url: mockStudentProfile.avatar_url
-  })
+  const directUser = getDirectUser()
+  const user = ref<SessionUser>(
+    directUser || {
+      id: mockStudent.id,
+      name: mockStudent.name,
+      email: mockStudent.email,
+      role: mockStudent.role,
+      avatar_url: mockStudentProfile.avatar_url
+    }
+  )
 
   const profile = ref<StudentProfile>({ ...mockStudentProfile })
-  const token = ref<string | null>(api.token.value)
+  const token = ref<string | null>(getDirectToken() || api.token.value)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  const isAuthenticated = computed(() => Boolean(token.value || user.value.id))
+  const isAuthenticated = computed(() => checkIsAuthenticated())
 
   const initials = computed(() =>
     user.value.name
@@ -188,20 +198,23 @@ export const useSessionStore = defineStore('session', () => {
   const logout = async () => {
     token.value = null
     api.setAuthToken(null)
+    clearDirectAuth()
     toast.info('Signed out', 'You have been logged out.')
     await navigateTo('/login')
   }
 
   const loadDemoUser = () => {
-    user.value = {
+    const demoUser: SessionUser = {
       id: mockStudent.id,
       name: mockStudent.name,
       email: mockStudent.email,
       role: mockStudent.role,
       avatar_url: mockStudentProfile.avatar_url
     }
+    user.value = demoUser
     profile.value = { ...mockStudentProfile }
     token.value = 'demo-jwt-token'
+    saveDirectAuth('demo-jwt-token', demoUser, mockStudentProfile)
     toast.info('Demo Session Loaded', 'Loaded student credentials in offline/demo mode.')
   }
 

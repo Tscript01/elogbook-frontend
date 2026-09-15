@@ -25,11 +25,28 @@ const API_BASE_KEY = 'siwes_api_base_url'
 const LIVE_MODE_KEY = 'siwes_api_live_mode'
 
 export const getStoredToken = (): string | null => {
+  try {
+    const cookie = useCookie<string | null>(TOKEN_KEY)
+    if (cookie.value) return cookie.value
+  } catch {
+    // Context fallback
+  }
   if (import.meta.server) return null
   return localStorage.getItem(TOKEN_KEY)
 }
 
 export const setStoredToken = (token: string | null) => {
+  try {
+    const cookie = useCookie<string | null>(TOKEN_KEY, {
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: 'lax',
+      path: '/'
+    })
+    cookie.value = token
+  } catch {
+    // Context fallback
+  }
+
   if (import.meta.server) return
   if (token) {
     localStorage.setItem(TOKEN_KEY, token)

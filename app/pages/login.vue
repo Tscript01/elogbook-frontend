@@ -16,6 +16,31 @@
 
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
       <div class="border border-slate-200 bg-white px-6 py-8 shadow-paper sm:rounded-2xl sm:px-10 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+        <!-- Success/Info Notice (from redirect or registration) -->
+        <div
+          v-if="noticeMessage"
+          class="mb-5 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300"
+          role="status"
+        >
+          <CheckCircle2 class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+          <div>
+            <p class="font-medium">{{ noticeMessage }}</p>
+          </div>
+        </div>
+
+        <!-- Auth Middleware Protected Page Redirect Banner -->
+        <div
+          v-if="redirectReason"
+          class="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300"
+          role="status"
+        >
+          <Info class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div>
+            <p class="font-medium">Authentication required</p>
+            <p class="mt-0.5 opacity-90">Please sign in to access your requested page.</p>
+          </div>
+        </div>
+
         <!-- Error Banner -->
         <div
           v-if="errorMessage"
@@ -47,9 +72,12 @@
           <div>
             <div class="flex items-center justify-between">
               <label for="password" class="field-label mb-0">Password</label>
-              <a href="#" class="text-xs text-primary-600 hover:underline dark:text-primary-400">
+              <NuxtLink
+                to="/forgot-password"
+                class="text-xs text-primary-600 hover:underline dark:text-primary-400"
+              >
                 Forgot password?
-              </a>
+              </NuxtLink>
             </div>
             <input
               id="password"
@@ -99,13 +127,13 @@
           </div>
 
           <div class="mt-4 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-            <span>Or test without backend:</span>
+            <span>Or bypass server:</span>
             <button
               type="button"
               class="font-medium text-primary-600 hover:underline dark:text-primary-400"
-              @click="launchOfflineDemo"
+              @click="directDemoLogin"
             >
-              Enter as Demo Student →
+              Direct Student Sign-in →
             </button>
           </div>
         </div>
@@ -122,21 +150,41 @@
 </template>
 
 <script setup lang="ts">
-import { AlertCircle, BookOpenCheck } from '@lucide/vue'
-import { ref } from 'vue'
-import { useSessionStore } from '~/stores/session'
+import { AlertCircle, BookOpenCheck, CheckCircle2, Info } from '@lucide/vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { mockStudent, mockStudentProfile } from '~/data/mock-student'
+import { apiDirectLogin, saveDirectAuth } from '~/utils/auth'
 
 definePageMeta({
   title: 'Sign In',
   layout: false
 })
 
-const session = useSessionStore()
+const route = useRoute()
 
 const email = ref('a.okafor@student.unilag.edu.ng')
 const password = ref('password123')
 const loading = ref(false)
 const errorMessage = ref<string | null>(null)
+
+const redirectReason = computed(() => Boolean(route.query.redirect))
+
+const noticeMessage = computed(() => {
+  if (route.query.registered === 'true') {
+    return 'Your account was registered successfully! Please sign in below.'
+  }
+  if (route.query.reset === 'true') {
+    return 'Password updated successfully! Please sign in with your new password.'
+  }
+  return null
+})
+
+onMounted(() => {
+  if (route.query.email && typeof route.query.email === 'string') {
+    email.value = route.query.email
+  }
+})
 
 const fillDemo = (demoEmail: string, demoPass: string) => {
   email.value = demoEmail
@@ -154,19 +202,46 @@ const handleLogin = async () => {
   errorMessage.value = null
 
   try {
-    await session.login({
+    // Direct API call without Pinia state management
+    const result = await apiDirectLogin({
       email: email.value.trim(),
       password: password.value
     })
+
+    // Store auth directly in universal cookie & localStorage
+    saveDirectAuth(result.token, result.user, result.profile)
+
+    const destination = (route.query.redirect as string) || '/student'
+    await navigateTo(destination)
   } catch (err: unknown) {
-    errorMessage.value = err instanceof Error ? err.message : 'Invalid credentials or API server not reachable.'
+    const rawMsg = err instanceof Error ? err.message : 'Invalid credentials or API server not reachable.'
+
+    // If connection refused or endpoint unavailable, offer clear guidance
+    if (rawMsg.includes('Failed to fetch') || rawMsg.includes('fetch failed') || rawMsg.includes('ECONNREFUSED')) {
+      errorMessage.value = 'Backend server is unreachable at the configured API base. You can click "Direct Student Sign-in" below to test the app without an active backend.'
+    } else {
+      errorMessage.value = rawMsg
+    }
   } finally {
     loading.value = false
   }
 }
 
-const launchOfflineDemo = async () => {
-  session.loadDemoUser()
-  await navigateTo('/student')
+const directDemoLogin = async () => {
+  // Direct authentication with sample user, bypasses store
+  saveDirectAuth(
+    'demo_jwt_token_' + Date.now(),
+    {
+      id: mockStudent.id,
+      name: mockStudent.name,
+      email: mockStudent.email,
+      role: mockStudent.role,
+      avatar_url: mockStudentProfile.avatar_url
+    },
+    mockStudentProfile
+  )
+
+  const destination = (route.query.redirect as string) || '/student'
+  await navigateTo(destination)
 }
 </script>
